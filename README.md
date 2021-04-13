@@ -64,12 +64,23 @@ The scripts have various dependencies. Make sure that they are installed and tha
 - `fields`
 - `scales`
 - `spatstat`
-- `stpp`
+- `stpp` # Should be in version 1.0
 - `ISOweek`
 - `ncdf4`
 - `reshape2`
 - `parallel`
 - `stringr`
+
+On the system, the following softwares might be needed: BWidget, GDAL, OpenSSL: `apt install bwidget libgdal-dev libssl-dev` (this command-line applies to Debian-like systems)
+
+### Installation of `stpp`, version < 2.0
+To work, the scripts require the library `stpp` in version 1.0. At the time of this update, version 2.0 has been released and is the default version installed. To install an older version, you need to proceed as follow (inspired from [this page](https://support.rstudio.com/hc/en-us/articles/219949047-Installing-older-versions-of-packages) :
+
+```
+install.packages('devtools')
+require(devtools)
+install_version("stpp", version = "1.0-5") # 1.0-5 is the latest compatible version
+```
 
 ## Processed datasets
 These scripts depend on various sources of data that are described below:
