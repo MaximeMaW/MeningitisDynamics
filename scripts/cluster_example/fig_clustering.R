@@ -271,7 +271,7 @@ resampleEpidemicsTC <- function(ppnp, pp.res, tc=0, sc=0) {
                     }
                 })
                 pp.new <- pp.res[dups,]
-                inh.new <- pp.new[sample(1:nrow(pp.new), fr.m),]
+                inh.new <- pp.new[sample(1:nrow(pp.new), fr.m),]/1000.
 
                 ## Iterative approach to add the correlated points
                 tmp <- rbind(inh, inh.new)
@@ -280,8 +280,8 @@ resampleEpidemicsTC <- function(ppnp, pp.res, tc=0, sc=0) {
                 }
                 tmp$t <- as.Date(t.cur)
                 tmp.loc <- apply(tmp, 1, function(l){
-                    reverseLookup(as.numeric(l["longitude"])/1000,
-                                  as.numeric(l["latitude"])/1000)})
+                    reverseLookup(as.numeric(l["x"]),
+                                  as.numeric(l["y"]))})
                 tmp.loc <- do.call("rbind", tmp.loc)
                 if (fr.n>0) {
                     for (k in 1:fr.n) {
@@ -289,8 +289,8 @@ resampleEpidemicsTC <- function(ppnp, pp.res, tc=0, sc=0) {
                         ok <- FALSE
                         while (!ok) {
                             adj <- do.call("rbind", apply(tmp, 1, function(l){
-                                extractAdjacency(as.numeric(l["longitude"])/1000,
-                                                 as.numeric(l["latitude"])/1000,
+                                extractAdjacency(as.numeric(l["x"]),
+                                                 as.numeric(l["y"]),
                                                  t.cur)
                             })) ## Extract all the adjacent stuff
                             adj <- adj[!duplicated(adj$nomfus) & !duplicated(adj$nomfus, fromLast=T),] ## Remove duplicates
@@ -305,20 +305,20 @@ resampleEpidemicsTC <- function(ppnp, pp.res, tc=0, sc=0) {
                                 tmp2 <- pp.new[sample(1:nrow(pp.new), 1),]
                                 tmp2$t <- as.Date(t.cur)
                                 tmp2.loc <- reverseLookup(
-                                    as.numeric(tmp2["longitude"])/1000,
-                                    as.numeric(tmp2["latitude"])/1000)
+                                    as.numeric(tmp2["x"]),
+                                    as.numeric(tmp2["y"]))
                                 tmp <- rbind(tmp, tmp2)
                                 tmp.loc <- rbind(tmp.loc, tmp2.loc)
                             }
                         }
-                        names(adj) <- c("longitude", "latitude", "nomfus")
+                        names(adj) <- c("x", "y", "nomfus")
                         adj[,1:2] <- adj[,1:2]*1000
                         adj$t <- as.Date(t.cur)
                         sel <- adj[sample(1:nrow(adj),1),]
                         sel2 <- sel
                         sel2[,1:2] <- sel2[,1:2]/1000
                         names(sel2) <- c("x", "y", "nomfus", "t")
-                        tmp <- rbind(tmp, sel[c("longitude", "latitude", "t")])
+                        tmp <- rbind(tmp, sel[c("x", "y", "t")])
                         tmp.loc <- rbind(tmp.loc, c(sel2[c("x", "y", "nomfus")]))
                     }
                     tmp.loc <- tmp.loc[sample(1:nrow(tmp.loc), fr.n),]
@@ -432,6 +432,23 @@ resampleEpidemicsBourrin <- function(pp2, pp2.res, s=10) {
     return(do.call("rbind", res))
 }
 
+resampleEpidemicsSC <-function(pp2, pp2.res, sp2, s=10) {
+    # Resample epidemics for the pure SC model (no time correlation)
+    res <- apply(as.data.frame(table(pp2[,3])), 1, function(l) {
+        ##sa <- as.numeric(pp2.res[sample(1:nrow(pp2.res), 1),])/1000
+        p = runifpoint(n=1, win=owin(poly=sp2[rev(1:nrow(sp2)),]))
+        sa <- c(p$x,p$y)/1000
+        re <- as.data.frame(matrix(rep(sa,
+                                       as.numeric(l["Freq"])),
+                                   ncol=2, byrow=TRUE))
+        re <- re+matrix(rnorm(2*nrow(re), sd=s), ncol=2)
+        re$t <- as.numeric(l["Var1"])
+        return(re)
+    })
+    return(do.call("rbind", res))
+}    
+
+
 resampleEpidemicsMulti <- function(pp2, pp2.res, s=c(10,20), p=0.5) {
     ## Function that generates a mix of two types of clusters of characteristic
     ## size described in variable `s`, and a proportion described by `p`.
@@ -450,7 +467,7 @@ resampleEpidemicsMulti <- function(pp2, pp2.res, s=c(10,20), p=0.5) {
 }
 
 
-saveResample <- TRUE
+saveResample <- FALSE
 
 if (saveResample) {
     ## Get ready for the resampling
@@ -588,15 +605,120 @@ if (saveResample) {
                                   dist = u, times = v, infectious = TRUE,
                                   s.region=sp3[rev(1:nrow(sp3)),]/1000)
     }
-    save(n2, n3, stik2, stik3, nrep,
-         pprandom2, pprandom3,
-         pprandom2.8, pprandom2.9, pprandom2.10, pprandom2.11, pprandom2.14, 
-         pprandom3.20, pprandom3.25, pprandom3.35, pprandom3.35,
-         pprandom2.8.13.p0.85, pprandom2.10.13.p0.85, pprandom2.10.13.p0.15,
-         file="../data/clusters/170302_stKripley_resample.RData")   
+    #save(n2, n3, stik2, stik3, nrep,
+    #     pprandom2, pprandom3,
+    #     pprandom2.8, pprandom2.9, pprandom2.10, pprandom2.11, pprandom2.14, 
+    #     pprandom3.20, pprandom3.25, pprandom3.35, pprandom3.35,
+    #     pprandom2.8.13.p0.85, pprandom2.10.13.p0.85, pprandom2.10.13.p0.15,
+    #     file="../data/clusters/170302_stKripley_resample.RData")
+    save(n2, n3, stik2, stik3, nrep, 
+         pprandom2, pprandom2.10, pprandom2.10.13.p0.15, pprandom2.10.13.p0.85, pprandom2.11, 
+         pprandom2.11.13.p0.5, pprandom2.8.11.p0.5, pprandom2.8.13.p0.85, 
+         pprandom2.9, pprandom3, pprandom3.20, pprandom3.25, pprandom3.30, pprandom3.35, 
+         file="../data/clusters/210414_stKripley_resample.RData")
 } else {
     ## n2, n3, stik2, stik3, pprandom2, pprandom3,
-    load("../data/clusters/170302_stKripley_resample.RData")
+    load("../data/clusters/210414_stKripley_resample.RData")
+}
+
+## Addition 2021
+if (saveResample) {
+    ## Get ready for the resampling
+    geo.proj$district <- unlist(lapply(strsplit(as.character(geo.proj$nomfus), "__"), function(l){l[[1]]}))
+
+    pprandom2.tc0 <- list()
+    print("pprandom2.tc0")
+    for (i in 1:nrep) {
+        print(paste("-- iteration", i, "/", nrep))
+        pp2.res <- as.data.frame(coordinates(subset(geo.proj, district %in% N2)))
+        names(pp2.res)<-c('x','y')
+        pp2p <- resampleEpidemicsTC(pp2, pp2.res, tc=0) ## Custom function, see above
+        pp2p[,c("x","y")] <- pp2p[,c("x","y")]+matrix(rnorm(2*nrow(pp2p), sd=1/1000), ncol=2)
+        
+        pprandom2.tc0[[i]] <- STIKhat(xyt = pp2p,
+                                      dist = u, times = v, infectious = TRUE,
+                                      s.region=sp2[rev(1:nrow(sp2)),]/1000)
+    }
+    
+    pprandom2.tc1 <- list()
+    print("pprandom2.tc1")
+    for (i in 1:nrep) {
+        print(paste("-- iteration", i, "/", nrep))
+        pp2.res <- as.data.frame(coordinates(subset(geo.proj, district %in% N2)))
+        names(pp2.res)<-c('x','y')
+        pp2p <- resampleEpidemicsTC(pp2, pp2.res, tc=1) ## Custom function, see above
+        pp2p[,c("x","y")] <- pp2p[,c("x","y")]+matrix(rnorm(2*nrow(pp2p), sd=1/1000), ncol=2)
+        
+        pprandom2.tc1[[i]] <- STIKhat(xyt = pp2p,
+                                      dist = u, times = v, infectious = TRUE,
+                                      s.region=sp2[rev(1:nrow(sp2)),]/1000)
+    }
+    
+    pprandom3.tc0 <- list()
+    print("pprandom3.tc0")
+    for (i in 1:nrep) {
+        print(paste("-- iteration", i, "/", nrep))
+        pp3.res <- as.data.frame(coordinates(subset(geo.proj, district %in% N3)))
+        names(pp3.res)<-c('x','y')
+        pp3p <- resampleEpidemicsTC(pp3, pp3.res, tc=0) ## Custom function, see above
+        pp3p[,c("x","y")] <- pp3p[,c("x","y")]+matrix(rnorm(2*nrow(pp3p), sd=.1), ncol=2)
+        
+        pprandom3.tc0[[i]] <- STIKhat(xyt = pp3p,
+                                      dist = u, times = v, infectious = TRUE,
+                                      s.region=sp3[rev(1:nrow(sp3)),]/1000)
+    }
+
+    pprandom3.sc30 <- list()
+    print("pprandom3.sc30")
+    for (i in 1:nrep) {
+        print(paste("-- iteration", i, "/", nrep))
+        pp3.res <- as.data.frame(coordinates(subset(geo.proj, district %in% N3)))
+        names(pp3.res)<-c('x','y')
+        pp3p <- resampleEpidemicsSC(pp3, pp3.res, sp3, s=30) ## Custom function, see above
+        names(pp3p)<-c('x','y','t')
+        pp3p[,c("x","y")] <- pp3p[,c("x","y")]+matrix(rnorm(2*nrow(pp3p), sd=.1), ncol=2)
+        
+        pprandom3.sc30[[i]] <- STIKhat(xyt = pp3p,
+                                      dist = u, times = v, infectious = TRUE,
+                                      s.region=sp3[rev(1:nrow(sp3)),]/1000)
+    }    
+
+    pprandom2.sc10 <- list()
+    print("pprandom2.sc10")
+    for (i in 1:nrep) {
+        print(paste("-- iteration", i, "/", nrep))
+        pp2.res <- as.data.frame(coordinates(subset(geo.proj, district %in% N2)))
+        names(pp2.res)<-c('x','y')
+        pp2p <- resampleEpidemicsSC(pp2, pp2.res, sp2, s=10) ## Custom function, see above
+        names(pp2p)<-c('x','y','t')
+        pp2p[,c("x","y")] <- pp2p[,c("x","y")]+matrix(rnorm(2*nrow(pp2p), sd=.1), ncol=2)
+        
+        pprandom2.sc10[[i]] <- STIKhat(xyt = pp2p,
+                                       dist = u, times = v, infectious = TRUE,
+                                       s.region=sp2[rev(1:nrow(sp2)),]/1000)
+    }
+            
+    pprandom3.tc1 <- list()
+    print("pprandom3.tc1")
+    for (i in 1:nrep) {
+        print(paste("-- iteration", i, "/", nrep))
+        pp3.res <- as.data.frame(coordinates(subset(geo.proj, district %in% N3)))
+        names(pp3.res)<-c('x','y')
+        pp3p <- resampleEpidemicsTC(pp3, pp3.res, tc=1) ## Custom function, see above
+        pp3p[,c("x","y")] <- pp3p[,c("x","y")]+matrix(rnorm(2*nrow(pp3p), sd=.1), ncol=2)
+        
+        pprandom3.tc1[[i]] <- STIKhat(xyt = pp3p,
+                                      dist = u, times = v, infectious = TRUE,
+                                      s.region=sp3[rev(1:nrow(sp3)),]/1000)
+    }
+    save(n2, n3, stik2, stik3, nrep, 
+         pprandom2.tc0, pprandom2.tc1,
+         pprandom3.tc0, pprandom3.tc0, 
+         pprandom2.sc10, pprandom3.sc30,
+         file="../data/clusters/210414_stKripley_resampleTC.RData")
+} else {
+    ## n2, n3, stik2, stik3, pprandom2, pprandom3,
+    load("../data/clusters/210414_stKripley_resampleTC.RData")
 }
 
 ##
@@ -621,33 +743,33 @@ plotresample(pprandom3, n3, stik3, bar=140)
 dev.off()
 
 ## Do the resampling
-pdf("../papers/woringer2/figures/cluster_example/Kripley_zone2.pdf", height=8, width=24)
-par(mfrow=c(2,2))
-##plotresample(pprandom2,    n2, stik2, bar=70, xlim=c(0,100))
-##plotresample(pprandom2.8.11.p0.5,    n2, stik2, bar=70, xlim=c(0,100))
+pdf("../figures/cluster_example/Kripley_zone2.pdf", height=8, width=24)
+par(mfrow=c(2,3))
+plotresample(pprandom2,    n2, stik2, bar=70, xlim=c(0,100))
+plotresample(pprandom2.8.11.p0.5,    n2, stik2, bar=70, xlim=c(0,100))
 plotresample(pprandom2.9, n2, stik2, bar=70, xlim=c(0,100))
 plotresample(pprandom2.11, n2, stik2, bar=70, xlim=c(0,100))
 plotresample(pprandom2.8.13.p0.85, n2, stik2, bar=70, xlim=c(0,100))
 plotresample(pprandom2.10.13.p0.85, n2, stik2, bar=70, xlim=c(0,100))
-plotresample(pprandom2.14.11.p25, n2, stik2, bar=70, xlim=c(0,100))
+#plotresample(pprandom2.14.11.p25, n2, stik2, bar=70, xlim=c(0,100))
 dev.off()
 
-pdf("../papers/woringer2/figures/cluster_example/Kripley_zone3.pdf", height=8, width=16)
+pdf("../figures/cluster_example/Kripley_zone3.pdf", height=8, width=16)
 par(mfrow=c(1,2))
 plotresample(pprandom3, n3, stik3, bar=140, xlim=c(0,150))
 plotresample(pprandom3.30, n3, stik3, bar=140, xlim=c(0,150))
 dev.off()
 
-pdf("../papers/woringer2/figures/cluster_example/Kripley_vs_null_raw.pdf", height=4, width=8)
+pdf("../figures/cluster_example/Kripley_vs_null_raw.pdf", height=4, width=8)
 par(mfrow=c(1,2))
 plotresample(pprandom2, n2.name, stik2, bar=70, xlim=c(0,100))
 plotresample(pprandom3, n3.name, stik3, bar=140, xlim=c(0,150))
 dev.off()
 
-pdf("../papers/woringer2/figures/cluster_example/Kripley_STC_model.pdf", height=8, width=24)
-par(mfrow=c(1,3))
+pdf("../figures/cluster_example/Kripley_STC_model.pdf", height=8, width=24)
+par(mfrow=c(1,2))
 plotresample(pprandom2.11, n2.name, stik2, bar=70, xlim=c(0,100))
-plotresample(pprandom2.14, n2.name, stik2, bar=70, xlim=c(0,100))
+#plotresample(pprandom2.14, n2.name, stik2, bar=70, xlim=c(0,100))
 plotresample(pprandom3.35, n3.name, stik3, bar=140, xlim=c(0,150))
 dev.off()
 
@@ -661,13 +783,31 @@ dev.off()
 ## ==== First try with a simple model for temporal aggregation
 ##
 
-## stik2.tc1 <- STIKhat(xyt = resampleEpidemicsTC(pp2, pp2.res, tc=1),
-##                  dist = u, times = v, infectious = TRUE,
-##                  s.region=sp2[rev(1:nrow(sp2)),]/1000)
-## stik2.tc0 <- STIKhat(xyt = resampleEpidemicsTC(pp2, pp2.res, tc=0),
-##                  dist = u, times = v, infectious = TRUE,
-##                  s.region=sp2[rev(1:nrow(sp2)),]/1000
-##                  )
+
+pdf("../figures/cluster_example/Kripley_STC_model.pdf", height=12, width=28)
+par(mfrow=c(2,4))
+plotresample(pprandom2.tc0, "CSR - North", stik2, bar=70, xlim=c(0,100))
+plotresample(pprandom2.tc1, "TC - North", stik2, bar=70, xlim=c(0,100))
+plotresample(pprandom2.sc10, "SC - North", stik2, bar=70, xlim=c(0,100))
+plotresample(pprandom2.10, "STC, 10km clusters - North", stik2, bar=70, xlim=c(0,100))
+
+plotresample(pprandom3.tc0, "CSR - West", stik3, bar=140, xlim=c(0,150))
+plotresample(pprandom3.tc1, "TC - West", stik3, bar=140, xlim=c(0,150))
+plotresample(pprandom3.sc30, "SC - West", stik3, bar=140, xlim=c(0,150))
+plotresample(pprandom3.30, "STC, 30km clusters - West", stik3, bar=140, xlim=c(0,150))
+dev.off()
+
+
+#stik2.tc1 <- STIKhat(xyt = resampleEpidemicsTC(pp2, pp2.res, tc=1),
+#                     dist = u, times = v, infectious = TRUE,
+#                     s.region=sp2[rev(1:nrow(sp2)),]/1000)
+
+
+
+#stik2.tc0 <- STIKhat(xyt = resampleEpidemicsTC(pp2, pp2.res, tc=0),
+#                  dist = u, times = v, infectious = TRUE,
+#                  s.region=sp2[rev(1:nrow(sp2)),]/1000
+                  )
 ## stik2.sc1 <- STIKhat(xyt = resampleEpidemicsTC(pp2, pp2.res, tc=0, sc=.1),
 ##                  dist = u, times = v, infectious = TRUE,
 ##                  s.region=sp2[rev(1:nrow(sp2)),]/1000)

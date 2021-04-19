@@ -1,8 +1,6 @@
 Supporting analyses for the paper "Characterization and detection of  bacterial meningitis localized epidemics in the African meningitis belt using high spatial resolution  surveillance data"
 ==============
 
-#+date: April 2021
-
 Here are the scripts used to derive the figures of the paper "Characterization and detection of  bacterial meningitis localized epidemics in the African meningitis belt using high spatial resolution  surveillance data" (manuscript in preparation). The aim is to make sure that the analyses are fully reproducible, that is:
 - The full dataset will be available upon request. They remain the property of the Direction de la Lutte contre la Maladie, Burkina Faso
 - The preprocessing and analysis scripts are made public here
