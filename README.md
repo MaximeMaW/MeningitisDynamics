@@ -36,7 +36,7 @@ The analyses are split by "categories":
 In the `scripts/` folder are the `.R` scripts and in the `figures/` folder the `.pdf` exports, and if needed, the `.svg` that creates the final figure.
 
 | Fig. | Description                           | Folder              | Script                    |
-|------+---------------------------------------+---------------------+---------------------------|
+|------|---------------------------------------|---------------------|---------------------------|
 |    S1 | Completeness of the dataset           | `data_completeness` | `fig_data_completeness.R` |
 |    1 | Temporal and spatial dynamics of meningitis clusters| `cluster_analysis`   | `fig_cluster_analysis.R` |
 |    2 | K-Ripley vs. null model               | `cluster_example`   | `fig_clustering.R`        |
